@@ -1,5 +1,5 @@
 "use client";
-import { CROP_TYPES, SOIL_TYPE, STATES } from "@/utils/Constant";
+import { CROP_TYPES, DISTRICTS, STATES } from "@/utils/Constant";
 import axios, { AxiosResponse } from "axios";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -13,6 +13,9 @@ const PredictPage = () => {
     crop_year: "",
     season: "",
     state: "",
+    district: "",
+    temperature: "",
+    humidity: "",
     area: "",
     rainFall: "",
     pesticide: "",
@@ -49,6 +52,42 @@ const PredictPage = () => {
     } catch (error) {
       console.error("Signup error:", error);
       toast.error("Failed to predict crop yield");
+    }
+  };
+
+  const handleFetchWeatherData = async () => {
+    if (!formData.state || !formData.district) {
+      toast.error("Please select state and district");
+      return;
+    }
+    try {
+      toast.loading("Fetching weather data...");
+      const geoResponse: AxiosResponse = await axios.get(
+        `http://api.openweathermap.org/geo/1.0/direct?q=${formData.district},${formData.state},IN&limit=1&appid=${process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY}`
+      );
+
+      if (geoResponse.data.length === 0) {
+        toast.error("Invalid state or district");
+        return;
+      }
+
+      const { lat, lon } = geoResponse.data[0];
+      const weatherResponse: AxiosResponse = await axios.get(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${process.env.NEXT_PUBLIC_OPENWEATHERMAP_API_KEY}`
+      );
+
+      const { main } = weatherResponse.data;
+
+      setFormData({
+        ...formData,
+        temperature: main.temp + "°C",
+        humidity: main.humidity + "%",
+      });
+      toast.dismiss();
+      toast.success("Weather data fetched successfully!");
+    } catch (error) {
+      console.error("Error fetching weather data:", error);
+      toast.error("Failed to fetch weather data");
     }
   };
 
@@ -89,20 +128,70 @@ const PredictPage = () => {
                 }}
               />
 
-              <select
-                className="select select-primary w-full text-base-content placeholder:text-base-content/70"
-                value={formData.state}
-                onChange={(e) => {
-                  setFormData({ ...formData, state: e.target.value });
-                }}
-              >
-                <option defaultChecked>Select State</option>
-                {STATES.map((state, index) => (
-                  <option key={index} value={state}>
-                    {state}
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-col md:flex-row gap-2 md:gap-4 justify-between items-center">
+                <select
+                  className="select select-primary w-full text-base-content placeholder:text-base-content/70"
+                  value={formData.state}
+                  onChange={(e) => {
+                    setFormData({ ...formData, state: e.target.value });
+                  }}
+                >
+                  <option defaultChecked>Select State</option>
+                  {STATES.map((state, index) => (
+                    <option key={index} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="select select-primary w-full text-base-content placeholder:text-base-content/70"
+                  value={formData.district}
+                  onChange={(e) => {
+                    setFormData({ ...formData, district: e.target.value });
+                  }}
+                >
+                  <option defaultChecked>Select District</option>
+                  {formData.state &&
+                    DISTRICTS[formData.state as keyof typeof DISTRICTS].map(
+                      (district: string, index: number) => (
+                        <option key={index} value={district}>
+                          {district}
+                        </option>
+                      )
+                    )}
+                </select>
+                <button
+                  className="btn btn-outline btn-primary"
+                  onClick={handleFetchWeatherData}
+                  disabled={!formData.district || !formData.state}
+                >
+                  Fetch Weather Data
+                </button>
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-2 md:gap-4 justify-between items-center">
+                <input
+                  type="text"
+                  placeholder="Temperature (in °C)"
+                  className="input input-bordered input-primary w-full text-base-content placeholder:text-base-content/70"
+                  readOnly
+                  value={formData.temperature}
+                  onChange={(e) => {
+                    setFormData({ ...formData, temperature: e.target.value });
+                  }}
+                />
+
+                <input
+                  type="text"
+                  placeholder="Humidity (%)"
+                  className="input input-bordered input-primary w-full text-base-content placeholder:text-base-content/70"
+                  readOnly
+                  value={formData.humidity}
+                  onChange={(e) => {
+                    setFormData({ ...formData, humidity: e.target.value });
+                  }}
+                />
+              </div>
 
               <select
                 className="select select-primary w-full text-base-content placeholder:text-base-content/70"
