@@ -6,8 +6,11 @@ import toast from "react-hot-toast";
 
 const PredictPage = () => {
   const [disabled, setDisabled] = useState(true);
-  const [yieldCrops, setYield] = useState();
-  const [production, setProduction] = useState();
+  const [data, setData] = useState({
+    yield: 0,
+    production: 0,
+    message: "",
+  });
   const [formData, setFormData] = useState({
     crop: "",
     crop_year: "",
@@ -30,7 +33,9 @@ const PredictPage = () => {
       !formData.state ||
       !formData.area ||
       !formData.rainFall ||
-      !formData.pesticide
+      !formData.pesticide ||
+      !formData.temperature ||
+      !formData.humidity
     ) {
       toast.error("Please fill all the fields");
       return;
@@ -40,8 +45,7 @@ const PredictPage = () => {
       toast.promise(response, {
         loading: "Crop Yield Predicting...",
         success: (data) => {
-          setYield(data.data.yield);
-          setProduction(data.data.production);
+          setData(data.data);
           return data.data.message;
         },
         error: (err: any) => {
@@ -80,8 +84,8 @@ const PredictPage = () => {
 
       setFormData({
         ...formData,
-        temperature: main.temp + "°C",
-        humidity: main.humidity + "%",
+        temperature: main.temp,
+        humidity: main.humidity,
       });
       toast.dismiss();
       toast.success("Weather data fetched successfully!");
@@ -175,10 +179,7 @@ const PredictPage = () => {
                   placeholder="Temperature (in °C)"
                   className="input input-bordered input-primary w-full text-base-content placeholder:text-base-content/70"
                   readOnly
-                  value={formData.temperature}
-                  onChange={(e) => {
-                    setFormData({ ...formData, temperature: e.target.value });
-                  }}
+                  value={formData.temperature + "°C"}
                 />
 
                 <input
@@ -186,10 +187,7 @@ const PredictPage = () => {
                   placeholder="Humidity (%)"
                   className="input input-bordered input-primary w-full text-base-content placeholder:text-base-content/70"
                   readOnly
-                  value={formData.humidity}
-                  onChange={(e) => {
-                    setFormData({ ...formData, humidity: e.target.value });
-                  }}
+                  value={formData.humidity + "%"}
                 />
               </div>
 
@@ -284,21 +282,19 @@ const PredictPage = () => {
                 </button>
               </div>
               <div className="flex flex-col gap-2 justify-center items-center">
-                {yieldCrops && (
+                {data.yield !== 0 && (
                   <div className="alert alert-success shadow-lg w-full max-w-[300px] flex flex-col gap-2 justify-center items-center">
                     <span className="text-xl font-semibold text-success-content text-center">
-                      Predicted Yield: {yieldCrops} Q/acre
+                      Predicted Yield: {data.yield} Q/acre
                     </span>
                     <span className="text-xl font-semibold text-success-content text-center">
-                      Predicted Production: {production} Q
+                      Predicted Production: {data.production} Q
                     </span>
-                  </div>
-                )}
-                {yieldCrops === 0 && (
-                  <div className="alert alert-error shadow-lg w-full max-w-[300px]">
-                    <span className="text-xl font-semibold text-error-content text-center">
-                      No Yield Found
-                    </span>
+                    {data.message && (
+                      <span className="text-sm font-semibold text-success-content text-center">
+                        {data.message}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
