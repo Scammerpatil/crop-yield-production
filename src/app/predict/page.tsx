@@ -285,11 +285,11 @@ const PredictPage = () => {
                 {data.yield !== 0 && (
                   <div className="alert alert-success shadow-lg w-full max-w-[300px] flex flex-col gap-2 justify-center items-center">
                     <span className="text-xl font-semibold text-success-content text-center">
-                      Predicted Yield: {data.yield} Q/acre
+                      Predicted Yield: {(data.yield / 10).toFixed(2)} ton/acre
                     </span>
-                    <span className="text-xl font-semibold text-success-content text-center">
+                    {/* <span className="text-xl font-semibold text-success-content text-center">
                       Predicted Production: {data.production} Q
-                    </span>
+                    </span> */}
                     {data.message && (
                       <span className="text-sm font-semibold text-success-content text-center">
                         {data.message}
